@@ -9,5 +9,5 @@ In this project, the following concepts are used to achieve the given problem:
 
 The source of the datasets can be accessed here along with the variable documentations: 
 
-Fandango dataset (this dataset contains 146 rows and 22 columns) - https://github.com/fivethirtyeight/data/tree/master/fandango
-Movie dataset from 2016-17 (this dataset contains 214 rows and 15 columns) - https://github.com/mircealex/Movie_ratings_2016_17
+- Fandango dataset (this dataset contains 146 rows and 22 columns) - https://github.com/fivethirtyeight/data/tree/master/fandango
+- Movie dataset from 2016-17 (this dataset contains 214 rows and 15 columns) - https://github.com/mircealex/Movie_ratings_2016_17

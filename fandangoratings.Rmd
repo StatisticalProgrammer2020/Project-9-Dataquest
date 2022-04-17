@@ -1,0 +1,214 @@
+---
+title: "Investigating Fandango Movie Ratings"
+author: "Abe Ceasar Perez"
+date: "April 10, 2022"
+output: html_document
+---
+
+### Investigating the Changes in the Fandango Ratings
+
+This project aims to analyze the more recent movie ratings data to determine whether there has been any change in Fandango's rating system after Hickey's analysis. 
+
+In addition to the objectives above, we'll be applying the following concepts in this project:
+
+- Sampling
+- Summary Statistics
+- Distribution Plots
+
+### Initial Findings
+
+Based on the initial findings of the project, there were slight differences observed between Fandango's ratings for popular movies in 2015 and 2016. 
+
+To further understand how the results were obtained, the process is outlined below:
+
+### Loading the Data
+
+For this project, we'll be loading two publicly available datasets:
+
+- One made by Walt Hicky  to analyze the characteristics of the Fandango's rating system which is available here: <https://github.com/fivethirtyeight/data/tree/master/fandango>
+
+- One extracted by the Dataquest Team Members which included the movies ratings data from movies released in 2016-2017:
+<https://github.com/mircealex/Movie_ratings_2016_17>
+
+
+```{r load_dataset, echo=TRUE, warning=FALSE}
+
+# Loads packages without warnings
+suppressPackageStartupMessages(library(tidyverse))
+
+# Reads both csv files without the column messages
+score_comparison <- read_csv("fandango_score_comparison.csv",
+                             show_col_types = FALSE)
+
+head(score_comparison)
+
+movie_ratings <- read_csv("movie_ratings_16_17.csv",
+                          show_col_types = FALSE)
+
+head(movie_ratings)
+
+```
+
+From the loaded datasets, we'll now be selecting the columns that we'll be using for this project. For the first dataset, we'll select the needed columns for Hickey's analysis as stated below:
+
+```{r select_cols, echo=TRUE, warning=FALSE}
+
+df1 <- score_comparison %>% 
+  select(FILM, 
+         Fandango_Stars, 
+         Fandango_Ratingvalue, 
+         Fandango_votes, 
+         Fandango_Difference)
+head(df1)
+
+```
+
+For the other dataset, we'll also select the needed columns as stated below:
+
+```{r select_cols2, echo=TRUE, warning=FALSE}
+
+df2 <- movie_ratings %>% 
+  select(movie, 
+         year, 
+         fandango)
+head(df2)
+
+```
+
+### Checking the Sample Representativeness
+
+For the next step, we'll check whether all of the movies have an equal chance to be included in the analysis. We'll be imputing values from the Rotten Tomatoes website and compare it with a sample of our datasets from Dataquest:
+
+```{r inspect_samples, echo=TRUE, warning=FALSE}
+
+set.seed(1)
+
+sampled <- sample_n(df2, size = 10)
+# Create a single column tibble of Rotten Tomato review counts
+
+reviews <- tibble(reviews = c(13569, 74904, 24293, 4141, 30183, 48952, 14328, 59359, 54765, 82222))
+
+bind_cols(sampled, reviews) # Combines the sample movie data and the Rotten Tomato review counts
+
+```
+
+### Re-aligning the Goals
+
+Based on the results above, we conclude that the sampling processes wer not random and the resulting samples are unlikely to be the representative of our population of interest.
+
+Because of that, we'll change the goal of the study and instead find any difference between the Fandango's ratings in 2015 and 2016. We'll start first by isolating the 2015 movies with the 2016 movies in different datasets.
+
+```{r separating_datasets, echo=TRUE, warning=FALSE}
+
+data_2015 <- df1[str_detect(df1$FILM,"2015"),] # selects movies that were produced in 2015
+
+data_2015 <- data_2015 %>% 
+  mutate(FILM = str_sub(FILM,1,str_length(FILM)-7),
+         year = 2015) # removes (2015) at every end of each movie title and adds the year in another column
+
+head(data_2015)
+
+data_2016 <- df2[df2$year == 2016,] # filters out movies made in 2016
+
+head(data_2016)
+
+```
+
+After correctly defining the datasets for both 2015 and 2016 movies, we'll now combine there datasets for our analysis and visualization:
+
+```{r combining_datasets, echo=TRUE, warning=FALSE}
+
+colnames(data_2015)[2:3] <- c("fandango","fandango1") # renames columns to combine to the other dataset
+
+combined_data <- rbind(data_2015[,c('year','fandango')], data_2016[,c(2,3)]) # combines 2015 and 2016 data excluding the fandango1 column in the 2015 data
+
+combined_data$year <- as.factor(combined_data$year) # Changes the data type of year into a grouping variable
+
+```
+
+### Are there any Differences in the Movie Ratings?
+
+We'll now proceed in analyzing the distribution of movie ratings. Looking into the plots below, we can see that the 2016 distribution is more skewed to the left compared to the 2015 distribution, which is somewhat normal at a mean rating of 4.
+
+It is likely that there was a change in the movie ratings between 2015 and 2016 since the movies were rated lower in 2016 compared to the previous year.
+
+```{r plot_kernel, echo=TRUE, warning=FALSE}
+
+ggplot(combined_data, aes(x=fandango, colour=year)) +
+  geom_density() + 
+  labs(x="Fandango rating", 
+       y="Density") + 
+  scale_x_continuous(limits = c(0,5), # defines the range of the movie rating
+                     breaks=seq(0,5,0.5))  + # interval of the movie rating axis is 0.5
+  theme_bw()
+
+```
+
+Next, we will observe the frequency distribution of the movie ratings using proportions and percentages. 
+
+Based on the table below, we can see that there is still a clear difference since the 2015 movie ratings are more evenly distributed between 3.5 - 4.5 while the 2016 movie ratings are more clustered in 4.0 based on the percentages alone. 
+
+Compared to the plots above, however, the direction of the difference is not as clear here in the tables.
+
+```{r fdt, echo=TRUE, warning=FALSE}
+
+# Creates a Frequency Distribution table using proportion and Percentages
+freqs <- combined_data %>% 
+  group_by(year, fandango) %>% 
+  summarize(Freq = n()) %>% 
+  mutate(Prop = Freq/ifelse(year==2016, 
+                            nrow(combined_data[combined_data$year==2016,]),
+                      nrow(combined_data[combined_data$year==2015,])), # calculates the proportion based on the year of the category
+         Percent = round(Prop*100,2)) 
+
+freqs
+
+```
+
+Lastly, we'll be creating summary statistics for each distribution and visualize it usingplots. We'll first create a table of these statistics using the process below:
+
+```{r summary_stats, echo=TRUE, warning=FALSE}
+
+mode <- function(x) {
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+} # creates a function for calculating the mode 
+
+stats <- combined_data %>% 
+  group_by(year) %>% 
+  summarize(avg = mean(fandango), 
+            med = median(fandango),
+            mod = mode(fandango)) # summarizes the statistics for each year
+
+stats_pivot <- pivot_longer(stats, 
+                            cols = c("avg","med","mod"),
+                            names_to = "statistics",
+                            values_to = "vals") # combines all summary statistics into one column
+
+```
+
+After we've created the table above, we'll be using a grouped bar graph to plot the statistics for each year below. 
+
+Based on the plot below, we can see that both the mean and the mode are slightly higher in 2015 compared to 2016 while the median for both years remained the same.
+
+```{r summary_stats_plot, echo=TRUE, warning=FALSE}
+
+# creates a grouped bar plot to compares statistics for 2015 and 2016.
+ggplot(stats_pivot, 
+       aes(x=statistics, y=vals, fill=year)) + 
+  geom_col(position="dodge") + 
+  labs(x="", 
+       y="Stars", 
+       title="Comparing summary statistics: 2015 vs 2016")
+
+```
+
+### Conclusion
+
+The aim of this project is to determine whether there is a change in the Fandango ratings system after Hickey's analysis. Due to the limitations of our samples, we mainly focused on determining whether there is a difference in the distribution of ratings between 2015 and 2016. 
+
+Based on the results above, we have concluded that the Fandango ratings of the top movies did change from 2015 to 2016. On average, popular movies in 2016 tend to be rated lower compared to the popular movies in 2015.
+
+<br>
+<br>
+

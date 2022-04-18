@@ -1,7 +1,6 @@
 ---
 title: "Investigating Fandango Movie Ratings"
 author: "Abe Ceasar Perez"
-date: "April 10, 2022"
 output: html_document
 ---
 
@@ -9,7 +8,7 @@ output: html_document
 
 This project aims to analyze the more recent movie ratings data to determine whether there has been any change in Fandango's rating system after Hickey's analysis. 
 
-In addition to the objectives above, we'll be applying the following concepts in this project:
+For this project, the following concepts were applied in order to accomplish the objectives above:
 
 - Sampling
 - Summary Statistics
